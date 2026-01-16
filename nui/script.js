@@ -34,6 +34,55 @@ function post(action, data = {}) {
     });
 }
 
+// Utility: Play sound effect
+function playSound(soundName) {
+    const audio = new Audio();
+    
+    // Map sound names to audio files or use Web Audio API
+    const sounds = {
+        'click': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGe77OeeSwwPUKXi8LdjHAU7k9jyz3ksBS1+zPDdkUALFGC36+uoVRQKRp/g8r5sIQUrgc7y2Yk2CBhnu+znk0sMD1Cl4vC3YxwFO5PY8s95LAUtfsz',
+        'success': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGe77OeeSwwPUKXi8LdjHAU7k9jyz3ksBS1+zPDdkUALFGC36+uoVRQKRp/g8r5sIQUrgc7y2Yk2CBhnu+znk0sMD1Cl4vC3YxwFO5PY8s95LAUtfsz',
+        'fail': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGe77OeeSwwPUKXi8LdjHAU7k9jyz3ksBS1+zPDdkUALFGC36+uoVRQKRp/g8r5sIQUrgc7y2Yk2CBhnu+znk0sMD1Cl4vC3YxwFO5PY8s95LAUtfsz',
+        'repair': 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGe77OeeSwwPUKXi8LdjHAU7k9jyz3ksBS1+zPDdkUALFGC36+uoVRQKRp/g8r5sIQUrgc7y2Yk2CBhnu+znk0sMD1Cl4vC3YxwFO5PY8s95LAUtfsz'
+    };
+    
+    // For now, we'll use a simple beep sound
+    // In production, you would load actual sound files
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    // Different frequencies for different sounds
+    if (soundName === 'success') {
+        oscillator.frequency.value = 800;
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } else if (soundName === 'fail') {
+        oscillator.frequency.value = 200;
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } else if (soundName === 'click') {
+        oscillator.frequency.value = 600;
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+    } else if (soundName === 'repair') {
+        oscillator.frequency.value = 400;
+        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.15);
+    }
+}
+
 // Show/Hide UIs
 function showMainUI() {
     document.getElementById('mainUI').classList.remove('hidden');
@@ -281,9 +330,13 @@ function checkMinigameResult() {
         
         if (distance <= perfectThreshold) {
             result = 'perfect';
+            playSound('success');
         } else {
             result = 'good';
+            playSound('click');
         }
+    } else {
+        playSound('fail');
     }
     
     minigameActive = false;
@@ -316,6 +369,7 @@ document.getElementById('stopDutyBtn').addEventListener('click', () => {
 document.querySelectorAll('.system-item').forEach(item => {
     item.addEventListener('click', () => {
         const system = item.getAttribute('data-system');
+        playSound('click');
         post('repair', { system });
     });
 });
@@ -409,6 +463,9 @@ function tightenBolt(boltElement) {
     
     document.getElementById('boltCount').textContent = boltsTightened;
     
+    // Play sound
+    playSound('click');
+    
     // Play tighten animation
     boltElement.style.transform = 'scale(1.2) rotate(360deg)';
     setTimeout(() => {
@@ -417,6 +474,7 @@ function tightenBolt(boltElement) {
     
     // Check if all bolts tightened
     if (boltsTightened >= 3) {
+        playSound('success');
         setTimeout(() => {
             switchToRotationPhase();
         }, 500);
@@ -463,17 +521,34 @@ function updateRotation(e) {
         
         // Only count clockwise rotation (positive angles)
         if (angleDiff > 0 && angleDiff < 90) {
-            rotationProgress += angleDiff / 10; // Adjust sensitivity
+            // Giảm độ nhạy - xoay chậm hơn để tăng tiến độ
+            rotationProgress += angleDiff / 25; // Giảm từ /10 xuống /25 (chậm hơn 2.5 lần)
             rotationProgress = Math.min(100, rotationProgress);
             
             // Update UI
             document.getElementById('rotationProgress').style.width = rotationProgress + '%';
             document.getElementById('rotationValue').textContent = Math.floor(rotationProgress);
             
-            // Update fan rotation speed
+            // Update fan rotation speed với các mốc rõ ràng
             const fanBlades = document.getElementById('fanBladesRotate');
             if (fanBlades) {
-                const speed = Math.max(0.5, 3 - (rotationProgress / 100) * 2.5);
+                let speed;
+                
+                // Tạo các mốc tốc độ rõ ràng
+                if (rotationProgress < 30) {
+                    // 0-30%: Cực chậm (6s -> 4.5s)
+                    speed = 6 - (rotationProgress / 30) * 1.5;
+                } else if (rotationProgress < 50) {
+                    // 30-50%: Chậm (4.5s -> 3s)
+                    speed = 4.5 - ((rotationProgress - 30) / 20) * 1.5;
+                } else if (rotationProgress < 70) {
+                    // 50-70%: Trung bình (3s -> 1.5s)
+                    speed = 3 - ((rotationProgress - 50) / 20) * 1.5;
+                } else {
+                    // 70-100%: Nhanh (1.5s -> 0.3s)
+                    speed = 1.5 - ((rotationProgress - 70) / 30) * 1.2;
+                }
+                
                 fanBlades.style.animationDuration = speed + 's';
             }
             
@@ -491,6 +566,11 @@ function completeFanMinigame(result) {
     fanMinigameActive = false;
     mouseTracking = false;
     document.body.style.cursor = 'default';
+    
+    // Play completion sound
+    if (result === 'perfect') {
+        playSound('success');
+    }
     
     post('minigameResult', {
         system: minigameData.system,
@@ -639,6 +719,9 @@ function stopDraggingBreaker(breakerId) {
     if (breaker.dragProgress >= 100) {
         breaker.clicksDone++;
         
+        // Play click sound
+        playSound('click');
+        
         // Play success animation
         element.classList.add('switch-success');
         setTimeout(() => {
@@ -648,6 +731,9 @@ function stopDraggingBreaker(breakerId) {
         // Check if breaker is fixed
         if (breaker.clicksDone >= breaker.clicksNeeded) {
             breaker.status = 'green';
+            
+            // Play success sound
+            playSound('success');
             
             // Success animation
             element.classList.add('success-flash');
@@ -936,9 +1022,17 @@ function repairCrack(crackId, mouseX, mouseY) {
     // Increase repair progress
     crack.repairProgress += 3; // 3% per click/move
     
+    // Play repair sound occasionally
+    if (Math.random() < 0.3) {
+        playSound('repair');
+    }
+    
     if (crack.repairProgress >= 100) {
         crack.repairProgress = 100;
         crack.isRepaired = true;
+        
+        // Play success sound
+        playSound('success');
         
         // Mark as repaired
         const crackElement = document.querySelector(`.crack[data-crack="${crackId}"]`);

@@ -156,7 +156,7 @@ AddEventHandler('windturbine:withdrawEarnings', function()
     local amount = math.floor(playerData[playerId].earningsPool)
     
     if amount <= 0 then
-        TriggerClientEvent('QBCore:Notify', playerId, 'Không có tiền để rút!', 'error')
+        TriggerClientEvent('QBCore:Notify', playerId, '❌ Không có tiền để rút!', 'error')
         return
     end
     
@@ -164,14 +164,14 @@ AddEventHandler('windturbine:withdrawEarnings', function()
     local Player = QBCore.Functions.GetPlayer(playerId)
     if Player then
         Player.Functions.AddMoney('cash', amount)
-        TriggerClientEvent('QBCore:Notify', playerId, string.format('Đã rút $%d từ quỹ!', amount), 'success')
+        TriggerClientEvent('QBCore:Notify', playerId, string.format('💰 Đã rút $%d từ quỹ tiền lương!', amount), 'success')
         
         playerData[playerId].earningsPool = 0
         TriggerClientEvent('windturbine:updateEarningsPool', playerId, 0)
         
         print(('[Wind Turbine] Player %s withdrew $%d'):format(playerId, amount))
     else
-        TriggerClientEvent('QBCore:Notify', playerId, 'Lỗi hệ thống!', 'error')
+        TriggerClientEvent('QBCore:Notify', playerId, '❌ Lỗi hệ thống!', 'error')
     end
 end)
 
@@ -187,16 +187,32 @@ CreateThread(function()
                 -- Sinh tiền mỗi chu kỳ
                 if currentTime - data.lastEarning >= (Config.EarningCycle / 1000) then
                     local earnings = CalculateEarnings(playerId)
-                    data.earningsPool = data.earningsPool + earnings
-                    data.lastEarning = currentTime
-                    
-                    TriggerClientEvent('windturbine:updateEarningsPool', playerId, data.earningsPool)
+                    if earnings > 0 then
+                        data.earningsPool = data.earningsPool + earnings
+                        data.lastEarning = currentTime
+                        
+                        TriggerClientEvent('windturbine:updateEarningsPool', playerId, data.earningsPool)
+                        
+                        -- Thông báo thu nhập
+                        local efficiency = CalculateEfficiency(playerId)
+                        if efficiency >= 80 then
+                            TriggerClientEvent('QBCore:Notify', playerId, string.format('💵 +$%d | Hiệu suất tuyệt vời!', math.floor(earnings)), 'success', 2000)
+                        elseif efficiency >= 50 then
+                            TriggerClientEvent('QBCore:Notify', playerId, string.format('💵 +$%d', math.floor(earnings)), 'primary', 2000)
+                        end
+                    else
+                        -- Thông báo ngừng sinh tiền
+                        TriggerClientEvent('QBCore:Notify', playerId, '⚠️ Cối xay gió ngừng sinh tiền! Cần sửa chữa hệ thống!', 'error', 3000)
+                    end
                 end
                 
                 -- Giảm hệ thống mỗi chu kỳ
                 if currentTime - data.lastDegrade >= (Config.DegradeCycle / 1000) then
                     DegradeSystems(playerId)
                     data.lastDegrade = currentTime
+                    
+                    -- Thông báo hệ thống đang xuống cấp
+                    TriggerClientEvent('QBCore:Notify', playerId, '🔧 Các hệ thống đang xuống cấp theo thời gian...', 'warning', 2000)
                 end
             end
         end

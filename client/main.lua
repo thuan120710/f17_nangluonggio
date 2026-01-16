@@ -5,6 +5,7 @@ local isNearTurbine = false
 local currentSystems = {}
 local currentEfficiency = 0
 local currentEarnings = 0
+local turbineSoundId = -1
 
 -- Mở UI chính
 local function OpenMainUI()
@@ -60,6 +61,12 @@ end)
 RegisterNUICallback('startDuty', function(data, cb)
     TriggerServerEvent('windturbine:startDuty')
     isOnDuty = true
+    QBCore.Functions.Notify('✅ Đã bắt đầu ca làm việc tại cối xay gió!', 'success', 3000)
+    PlaySound(-1, "CHECKPOINT_PERFECT", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+    
+    -- Bắt đầu âm thanh cối xay gió
+    StartTurbineSound()
+    
     cb('ok')
 end)
 
@@ -67,6 +74,12 @@ RegisterNUICallback('stopDuty', function(data, cb)
     TriggerServerEvent('windturbine:stopDuty')
     isOnDuty = false
     CloseUI()
+    QBCore.Functions.Notify('👋 Đã kết thúc ca làm việc!', 'primary', 3000)
+    PlaySound(-1, "QUIT", "HUD_FRONTEND_DEFAULT_SOUNDSET", 0, 0, 1)
+    
+    -- Dừng âm thanh cối xay gió
+    StopTurbineSound()
+    
     cb('ok')
 end)
 
@@ -79,6 +92,18 @@ end)
 
 RegisterNUICallback('minigameResult', function(data, cb)
     TriggerServerEvent('windturbine:repairSystem', data.system, data.result)
+    
+    -- Thông báo kết quả sửa chữa
+    if data.result == 'perfect' then
+        QBCore.Functions.Notify('🌟 Hoàn hảo! Hệ thống ' .. data.system:upper() .. ' đã được sửa chữa tốt!', 'success', 3000)
+        PlaySound(-1, "CHECKPOINT_PERFECT", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+    elseif data.result == 'good' then
+        QBCore.Functions.Notify('✅ Tốt! Hệ thống ' .. data.system:upper() .. ' đã được cải thiện!', 'success', 3000)
+        PlaySound(-1, "CHECKPOINT_NORMAL", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+    else
+        QBCore.Functions.Notify('❌ Thất bại! Hệ thống ' .. data.system:upper() .. ' bị giảm hiệu suất!', 'error', 3000)
+        PlaySound(-1, "CHECKPOINT_MISSED", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+    end
     
     -- Đợi 2.5 giây trước khi đóng và mở lại UI
     Wait(2500)
@@ -95,6 +120,7 @@ end)
 
 RegisterNUICallback('withdrawEarnings', function(data, cb)
     TriggerServerEvent('windturbine:withdrawEarnings')
+    PlaySound(-1, "PICK_UP", "HUD_FRONTEND_DEFAULT_SOUNDSET", 0, 0, 1)
     cb('ok')
 end)
 
@@ -111,6 +137,16 @@ AddEventHandler('windturbine:updateSystems', function(systems)
         action = 'updateSystems',
         systems = systems
     })
+    
+    -- Kiểm tra và thông báo hệ thống xuống dưới 30%
+    for system, value in pairs(systems) do
+        if value < 30 and value > 0 then
+            QBCore.Functions.Notify('⚠️ Cảnh báo: Hệ thống ' .. system:upper() .. ' đang ở mức nguy hiểm!', 'error', 5000)
+            PlaySound(-1, "CHECKPOINT_MISSED", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+        elseif value < 50 and value >= 30 then
+            QBCore.Functions.Notify('⚠️ Chú ý: Hệ thống ' .. system:upper() .. ' cần bảo trì!', 'warning', 3000)
+        end
+    end
 end)
 
 RegisterNetEvent('windturbine:updateEfficiency')
@@ -120,6 +156,14 @@ AddEventHandler('windturbine:updateEfficiency', function(efficiency)
         action = 'updateEfficiency',
         efficiency = efficiency
     })
+    
+    -- Thông báo khi hiệu suất quá thấp
+    if efficiency < 10 then
+        QBCore.Functions.Notify('🚨 Cối xay gió đã ngừng hoạt động! Hiệu suất quá thấp!', 'error', 5000)
+        PlaySound(-1, "CHECKPOINT_MISSED", "HUD_MINI_GAME_SOUNDSET", 0, 0, 1)
+    elseif efficiency < 30 then
+        QBCore.Functions.Notify('⚠️ Hiệu suất rất thấp! Cần sửa chữa ngay!', 'error', 3000)
+    end
 end)
 
 RegisterNetEvent('windturbine:updateEarningsPool')
@@ -139,6 +183,8 @@ end)
 
 -- Thread: Kiểm tra khoảng cách
 CreateThread(function()
+    local lastWarningTime = 0
+    
     while true do
         Wait(1000)
         
@@ -152,6 +198,16 @@ CreateThread(function()
         )
         
         isNearTurbine = distance < 5.0
+        
+        -- Cảnh báo khi rời xa trong khi đang làm việc (không tự động kết thúc ca)
+        if isOnDuty and distance > 50.0 then
+            local currentTime = GetGameTimer()
+            -- Chỉ thông báo mỗi 30 giây để tránh spam
+            if currentTime - lastWarningTime > 30000 then
+                QBCore.Functions.Notify('⚠️ Bạn đang rời xa cối xay gió! Ca làm việc vẫn tiếp tục.', 'warning', 5000)
+                lastWarningTime = currentTime
+            end
+        end
     end
 end)
 
