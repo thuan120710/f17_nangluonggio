@@ -248,7 +248,7 @@
         </div>
     </div>
     
-    <!-- Minigame UI -->
+    <!-- Minigame UI (Bar Type) -->
     <div id="minigameUI" class="container hidden">
         <div class="bg-grid"></div>
         <div class="header">
@@ -276,6 +276,244 @@
                 <div class="minigame-round">
                     Round: <span id="currentRound">1</span>/<span id="totalRounds">1</span>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Minigame UI (Fan Type - Stability) -->
+    <div id="fanMinigameUI" class="container hidden">
+        <div class="bg-grid"></div>
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-icon">🔧</div>
+                <div class="header-text">
+                    <h1>SỬA CHỮA CÁNH QUẠT</h1>
+                    <span class="subtitle">TIGHTEN BOLTS & ROTATE FAN</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fan-minigame-content">
+            <!-- Phase 1: Tighten Bolts -->
+            <div id="fanPhase1" class="fan-phase">
+                <div class="fan-instruction">
+                    <div class="instruction-icon">🔩</div>
+                    <div class="instruction-text">SIẾT ỐC CÁNH QUẠT</div>
+                    <div class="instruction-hint">Click vào ốc để siết (3 lần)</div>
+                </div>
+                
+                <div class="fan-container">
+                    <div class="fan-center">
+                        <div class="fan-core"></div>
+                    </div>
+                    <div class="fan-blades" id="fanBlades">
+                        <div class="fan-blade"></div>
+                        <div class="fan-blade"></div>
+                        <div class="fan-blade"></div>
+                    </div>
+                    <!-- Bolts -->
+                    <div class="bolt bolt-1" data-bolt="1">
+                        <div class="bolt-head"></div>
+                        <div class="bolt-glow"></div>
+                    </div>
+                    <div class="bolt bolt-2" data-bolt="2">
+                        <div class="bolt-head"></div>
+                        <div class="bolt-glow"></div>
+                    </div>
+                    <div class="bolt bolt-3" data-bolt="3">
+                        <div class="bolt-head"></div>
+                        <div class="bolt-glow"></div>
+                    </div>
+                </div>
+                
+                <div class="bolt-counter">
+                    Ốc đã siết: <span id="boltCount">0</span>/3
+                </div>
+            </div>
+            
+            <!-- Phase 2: Rotate Fan -->
+            <div id="fanPhase2" class="fan-phase hidden">
+                <div class="fan-instruction">
+                    <div class="instruction-icon">🔄</div>
+                    <div class="instruction-text">XOAY CÁNH QUẠT</div>
+                    <div class="instruction-hint">Xoay chuột theo chiều kim đồng hồ</div>
+                </div>
+                
+                <div class="fan-container">
+                    <div class="fan-center">
+                        <div class="fan-core"></div>
+                        <div class="rotation-arrow">↻</div>
+                    </div>
+                    <div class="fan-blades rotating" id="fanBladesRotate">
+                        <div class="fan-blade"></div>
+                        <div class="fan-blade"></div>
+                        <div class="fan-blade"></div>
+                    </div>
+                </div>
+                
+                <div class="rotation-progress">
+                    <div class="progress-label">Tiến độ xoay</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="rotationProgress"></div>
+                    </div>
+                    <div class="progress-value"><span id="rotationValue">0</span>%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Minigame UI (Circuit Breaker - Electrical) -->
+    <div id="circuitBreakerUI" class="container hidden">
+        <div class="bg-grid"></div>
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-icon">⚡</div>
+                <div class="header-text">
+                    <h1>SỬA CHỮA HỆ THỐNG ĐIỆN</h1>
+                    <span class="subtitle">RESET CIRCUIT BREAKERS</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="circuit-breaker-content">
+            <div class="circuit-instruction">
+                <div class="instruction-icon">⚠️</div>
+                <div class="instruction-text">CHUYỂN TẤT CẢ CẦU DAO VỀ MÀU XANH</div>
+                <div class="instruction-hint">
+                    <span class="hint-item"><span class="color-dot green"></span> Xanh: Đã ổn</span>
+                    <span class="hint-item"><span class="color-dot yellow"></span> Vàng: Kéo lên 1 lần</span>
+                    <span class="hint-item"><span class="color-dot red"></span> Đỏ: Kéo lên 2 lần</span>
+                </div>
+                <div class="instruction-sub">Giữ chuột và kéo lên để gạt cầu dao</div>
+            </div>
+            
+            <div class="breakers-panel">
+                <div class="panel-frame">
+                    <div class="panel-header">
+                        <div class="panel-title">ELECTRICAL PANEL</div>
+                        <div class="panel-voltage">480V</div>
+                    </div>
+                    
+                    <div class="breakers-grid">
+                        <div class="breaker status-green" data-breaker="1">
+                            <div class="breaker-label">BREAKER 1</div>
+                            <div class="breaker-body">
+                                <div class="breaker-indicator"></div>
+                                <div class="breaker-switch">
+                                    <div class="switch-handle"></div>
+                                    <div class="drag-progress">
+                                        <div class="drag-progress-bar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="breaker-rating">20A</div>
+                        </div>
+                        
+                        <div class="breaker status-red" data-breaker="2">
+                            <div class="breaker-label">BREAKER 2</div>
+                            <div class="breaker-body">
+                                <div class="breaker-indicator"></div>
+                                <div class="breaker-switch">
+                                    <div class="switch-handle"></div>
+                                    <div class="drag-progress">
+                                        <div class="drag-progress-bar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="breaker-rating">30A</div>
+                        </div>
+                        
+                        <div class="breaker status-yellow" data-breaker="3">
+                            <div class="breaker-label">BREAKER 3</div>
+                            <div class="breaker-body">
+                                <div class="breaker-indicator"></div>
+                                <div class="breaker-switch">
+                                    <div class="switch-handle"></div>
+                                    <div class="drag-progress">
+                                        <div class="drag-progress-bar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="breaker-rating">25A</div>
+                        </div>
+                        
+                        <div class="breaker status-red" data-breaker="4">
+                            <div class="breaker-label">BREAKER 4</div>
+                            <div class="breaker-body">
+                                <div class="breaker-indicator"></div>
+                                <div class="breaker-switch">
+                                    <div class="switch-handle"></div>
+                                    <div class="drag-progress">
+                                        <div class="drag-progress-bar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="breaker-rating">40A</div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-footer">
+                        <div class="warning-strip">⚠ CAUTION: HIGH VOLTAGE ⚠</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="breaker-counter">
+                Cầu dao đã sửa: <span id="breakerCount">0</span>/4
+            </div>
+        </div>
+    </div>
+    
+    <!-- Minigame UI (Crack Repair - Blades) -->
+    <div id="crackRepairUI" class="container hidden">
+        <div class="bg-grid"></div>
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-icon">🔨</div>
+                <div class="header-text">
+                    <h1>SỬA CHỮA THÂN THÁP</h1>
+                    <span class="subtitle">REPAIR TOWER CRACKS</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="crack-repair-content">
+            <div class="crack-instruction">
+                <div class="instruction-icon">⚠️</div>
+                <div class="instruction-text">SỬA CHỮA VẾT NỨT TRÊN THÂN THÁP</div>
+                <div class="instruction-hint">
+                    Click hoặc giữ chuột và di chuyển trên vết nứt để trét xi măng
+                </div>
+            </div>
+            
+            <div class="tower-structure" id="towerStructure">
+                <!-- Tower visual -->
+                <div class="tower-body">
+                    <div class="tower-segment"></div>
+                    <div class="tower-segment"></div>
+                    <div class="tower-segment"></div>
+                    <div class="tower-segment"></div>
+                    <div class="tower-segment"></div>
+                </div>
+                
+                <!-- Cracks will be dynamically added here -->
+                <div id="cracksContainer"></div>
+                
+                <!-- Tower details -->
+                <div class="tower-rivets">
+                    <div class="rivet"></div>
+                    <div class="rivet"></div>
+                    <div class="rivet"></div>
+                    <div class="rivet"></div>
+                    <div class="rivet"></div>
+                    <div class="rivet"></div>
+                    <div class="rivet"></div>
+                    <div class="rivet"></div>
+                </div>
+            </div>
+            
+            <div class="crack-counter">
+                Vết nứt đã sửa: <span id="crackCount">0</span>/<span id="totalCracks">3</span>
             </div>
         </div>
     </div>

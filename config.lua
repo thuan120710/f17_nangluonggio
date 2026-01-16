@@ -22,31 +22,36 @@ Config.InitialSystemValue = 70
 -- Cấu hình minigame cho từng hệ thống
 Config.MinigameSettings = {
     stability = {
-        title = "Cân bằng hệ thống ổn định",
+        title = "Sửa chữa cánh quạt",
+        type = "fan", -- Minigame đặc biệt cho stability
         speed = 1.2,
         zoneSize = 0.22,
         rounds = 1
     },
     electric = {
-        title = "Reset hệ thống điện",
+        title = "Sửa chữa hệ thống điện",
+        type = "circuit", -- Minigame đặc biệt cho electrical
         speed = 1.3,
         zoneSize = 0.2,
         rounds = 1
     },
     lubrication = {
         title = "Bơm dầu bôi trơn",
+        type = "bar",
         speed = 1.1,
         zoneSize = 0.25,
         rounds = 1
     },
     blades = {
-        title = "Hiệu chỉnh cánh quạt",
+        title = "Sửa chữa thân tháp",
+        type = "crack", -- Minigame đặc biệt cho blades
         speed = 1.4,
         zoneSize = 0.18,
         rounds = 1
     },
     safety = {
         title = "Kiểm tra an toàn",
+        type = "bar",
         speed = 1.0,
         zoneSize = 0.28,
         rounds = 1

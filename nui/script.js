@@ -8,6 +8,23 @@ let indicatorDirection = 1;
 let currentRound = 0;
 let totalRounds = 1;
 
+// Fan minigame variables
+let fanMinigameActive = false;
+let fanPhase = 1; // 1: Tighten bolts, 2: Rotate fan
+let boltsTightened = 0;
+let rotationProgress = 0;
+let lastMouseAngle = 0;
+let mouseTracking = false;
+
+// Circuit breaker minigame variables
+let circuitBreakerActive = false;
+let breakers = []; // Array of breaker states: {id, status: 'green'|'red'|'yellow', clicksNeeded, clicksDone}
+
+// Crack repair minigame variables
+let crackRepairActive = false;
+let cracks = []; // Array of crack objects: {id, x, y, width, height, repairProgress, isRepaired}
+let trowelActive = false;
+
 // Utility: Post message to client
 function post(action, data = {}) {
     fetch(`https://${GetParentResourceName()}/${action}`, {
@@ -28,6 +45,33 @@ function showMinigameUI() {
     document.getElementById('mainUI').classList.add('hidden');
     document.getElementById('minigameUI').classList.remove('hidden');
     document.getElementById('earningsUI').classList.add('hidden');
+    document.getElementById('fanMinigameUI').classList.add('hidden');
+}
+
+function showFanMinigameUI() {
+    document.getElementById('mainUI').classList.add('hidden');
+    document.getElementById('minigameUI').classList.add('hidden');
+    document.getElementById('earningsUI').classList.add('hidden');
+    document.getElementById('fanMinigameUI').classList.remove('hidden');
+    document.getElementById('circuitBreakerUI').classList.add('hidden');
+}
+
+function showCircuitBreakerUI() {
+    document.getElementById('mainUI').classList.add('hidden');
+    document.getElementById('minigameUI').classList.add('hidden');
+    document.getElementById('earningsUI').classList.add('hidden');
+    document.getElementById('fanMinigameUI').classList.add('hidden');
+    document.getElementById('circuitBreakerUI').classList.remove('hidden');
+    document.getElementById('crackRepairUI').classList.add('hidden');
+}
+
+function showCrackRepairUI() {
+    document.getElementById('mainUI').classList.add('hidden');
+    document.getElementById('minigameUI').classList.add('hidden');
+    document.getElementById('earningsUI').classList.add('hidden');
+    document.getElementById('fanMinigameUI').classList.add('hidden');
+    document.getElementById('circuitBreakerUI').classList.add('hidden');
+    document.getElementById('crackRepairUI').classList.remove('hidden');
 }
 
 function showEarningsUI() {
@@ -40,6 +84,9 @@ function hideAllUIs() {
     document.getElementById('mainUI').classList.add('hidden');
     document.getElementById('minigameUI').classList.add('hidden');
     document.getElementById('earningsUI').classList.add('hidden');
+    document.getElementById('fanMinigameUI').classList.add('hidden');
+    document.getElementById('circuitBreakerUI').classList.add('hidden');
+    document.getElementById('crackRepairUI').classList.add('hidden');
 }
 
 // Update systems display
@@ -128,6 +175,25 @@ function updateEarningsDisplay(earnings) {
 
 // Start minigame
 function startMinigame(system, title, speed, zoneSize, rounds) {
+    // Check if this is stability system - use fan minigame
+    if (system === 'stability') {
+        startFanMinigame(system);
+        return;
+    }
+    
+    // Check if this is electrical system - use circuit breaker minigame
+    if (system === 'electric') {
+        startCircuitBreakerMinigame(system);
+        return;
+    }
+    
+    // Check if this is blades system - use crack repair minigame
+    if (system === 'blades') {
+        startCrackRepairMinigame(system);
+        return;
+    }
+    
+    // Regular bar minigame for other systems
     minigameActive = true;
     minigameData = { system, speed, zoneSize };
     currentRound = 1;
@@ -149,6 +215,32 @@ function startMinigame(system, title, speed, zoneSize, rounds) {
     
     showMinigameUI();
     animateIndicator();
+}
+
+// Start fan minigame (for stability)
+function startFanMinigame(system) {
+    fanMinigameActive = true;
+    fanPhase = 1;
+    boltsTightened = 0;
+    rotationProgress = 0;
+    minigameData = { system };
+    
+    // Reset UI
+    document.getElementById('boltCount').textContent = '0';
+    document.getElementById('rotationProgress').style.width = '0%';
+    document.getElementById('rotationValue').textContent = '0';
+    document.getElementById('fanPhase1').classList.remove('hidden');
+    document.getElementById('fanPhase2').classList.add('hidden');
+    
+    // Reset bolts
+    document.querySelectorAll('.bolt').forEach(bolt => {
+        bolt.classList.remove('tightened');
+    });
+    
+    // Change cursor to wrench
+    document.body.style.cursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'><text y=\'24\' font-size=\'24\'>🔧</text></svg>") 16 16, auto';
+    
+    showFanMinigameUI();
 }
 
 // Animate minigame indicator
@@ -304,5 +396,640 @@ window.addEventListener('message', (event) => {
         case 'updateEarnings':
             updateEarningsDisplay(data.earnings);
             break;
+    }
+});
+
+// Fan Minigame Functions
+function tightenBolt(boltElement) {
+    if (!fanMinigameActive || fanPhase !== 1) return;
+    if (boltElement.classList.contains('tightened')) return;
+    
+    boltElement.classList.add('tightened');
+    boltsTightened++;
+    
+    document.getElementById('boltCount').textContent = boltsTightened;
+    
+    // Play tighten animation
+    boltElement.style.transform = 'scale(1.2) rotate(360deg)';
+    setTimeout(() => {
+        boltElement.style.transform = '';
+    }, 300);
+    
+    // Check if all bolts tightened
+    if (boltsTightened >= 3) {
+        setTimeout(() => {
+            switchToRotationPhase();
+        }, 500);
+    }
+}
+
+function switchToRotationPhase() {
+    fanPhase = 2;
+    document.getElementById('fanPhase1').classList.add('hidden');
+    document.getElementById('fanPhase2').classList.remove('hidden');
+    
+    // Reset cursor
+    document.body.style.cursor = 'default';
+    
+    // Start tracking mouse for rotation
+    mouseTracking = true;
+}
+
+function calculateMouseAngle(e) {
+    const fanContainer = document.querySelector('#fanPhase2 .fan-container');
+    if (!fanContainer) return 0;
+    
+    const rect = fanContainer.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const deltaX = e.clientX - centerX;
+    const deltaY = e.clientY - centerY;
+    
+    return Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+}
+
+function updateRotation(e) {
+    if (!fanMinigameActive || fanPhase !== 2 || !mouseTracking) return;
+    
+    const currentAngle = calculateMouseAngle(e);
+    
+    if (lastMouseAngle !== 0) {
+        let angleDiff = currentAngle - lastMouseAngle;
+        
+        // Handle angle wrap-around
+        if (angleDiff > 180) angleDiff -= 360;
+        if (angleDiff < -180) angleDiff += 360;
+        
+        // Only count clockwise rotation (positive angles)
+        if (angleDiff > 0 && angleDiff < 90) {
+            rotationProgress += angleDiff / 10; // Adjust sensitivity
+            rotationProgress = Math.min(100, rotationProgress);
+            
+            // Update UI
+            document.getElementById('rotationProgress').style.width = rotationProgress + '%';
+            document.getElementById('rotationValue').textContent = Math.floor(rotationProgress);
+            
+            // Update fan rotation speed
+            const fanBlades = document.getElementById('fanBladesRotate');
+            if (fanBlades) {
+                const speed = Math.max(0.5, 3 - (rotationProgress / 100) * 2.5);
+                fanBlades.style.animationDuration = speed + 's';
+            }
+            
+            // Check completion
+            if (rotationProgress >= 100) {
+                completeFanMinigame('perfect');
+            }
+        }
+    }
+    
+    lastMouseAngle = currentAngle;
+}
+
+function completeFanMinigame(result) {
+    fanMinigameActive = false;
+    mouseTracking = false;
+    document.body.style.cursor = 'default';
+    
+    post('minigameResult', {
+        system: minigameData.system,
+        result: result
+    });
+}
+
+// Event listeners for fan minigame
+document.addEventListener('click', (e) => {
+    if (!fanMinigameActive || fanPhase !== 1) return;
+    
+    const bolt = e.target.closest('.bolt');
+    if (bolt) {
+        tightenBolt(bolt);
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (fanMinigameActive && fanPhase === 2) {
+        updateRotation(e);
+    }
+});
+
+// Circuit Breaker Minigame Functions
+function startCircuitBreakerMinigame(system) {
+    circuitBreakerActive = true;
+    minigameData = { system };
+    
+    // Initialize 4 breakers with random states
+    breakers = [];
+    const states = ['green', 'red', 'red', 'yellow']; // 1 green (already ok), 2 red (need 2 clicks), 1 yellow (need 1 click)
+    
+    // Shuffle states
+    for (let i = states.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [states[i], states[j]] = [states[j], states[i]];
+    }
+    
+    // Create breaker objects
+    for (let i = 0; i < 4; i++) {
+        const status = states[i];
+        breakers.push({
+            id: i + 1,
+            status: status,
+            clicksNeeded: status === 'green' ? 0 : (status === 'red' ? 2 : 1),
+            clicksDone: 0,
+            isDragging: false,
+            dragStartY: 0,
+            dragProgress: 0
+        });
+    }
+    
+    // Update UI
+    updateCircuitBreakerUI();
+    showCircuitBreakerUI();
+}
+
+function updateCircuitBreakerUI() {
+    breakers.forEach(breaker => {
+        const element = document.querySelector(`.breaker[data-breaker="${breaker.id}"]`);
+        if (!element) return;
+        
+        // Remove all status classes
+        element.classList.remove('status-green', 'status-red', 'status-yellow');
+        
+        // Add current status class
+        element.classList.add(`status-${breaker.status}`);
+        
+        // Update switch position
+        const switchElement = element.querySelector('.breaker-switch');
+        if (switchElement) {
+            if (breaker.status === 'green') {
+                switchElement.classList.add('on');
+            } else {
+                switchElement.classList.remove('on');
+            }
+        }
+        
+        // Update indicator
+        const indicator = element.querySelector('.breaker-indicator');
+        if (indicator) {
+            indicator.style.background = breaker.status === 'green' ? '#00ff88' : 
+                                        breaker.status === 'red' ? '#ff4444' : '#ffaa00';
+        }
+    });
+    
+    // Update counter
+    const completedCount = breakers.filter(b => b.status === 'green').length;
+    document.getElementById('breakerCount').textContent = completedCount;
+}
+
+function startDraggingBreaker(breakerId, startY) {
+    if (!circuitBreakerActive) return;
+    
+    const breaker = breakers.find(b => b.id === breakerId);
+    if (!breaker || breaker.status === 'green') return;
+    
+    breaker.isDragging = true;
+    breaker.dragStartY = startY;
+    breaker.dragProgress = 0;
+    
+    const element = document.querySelector(`.breaker[data-breaker="${breakerId}"]`);
+    element.classList.add('dragging');
+}
+
+function updateDraggingBreaker(breakerId, currentY) {
+    if (!circuitBreakerActive) return;
+    
+    const breaker = breakers.find(b => b.id === breakerId);
+    if (!breaker || !breaker.isDragging) return;
+    
+    // Calculate drag distance (negative = dragging up)
+    const dragDistance = breaker.dragStartY - currentY;
+    const requiredDistance = 80; // pixels needed to drag up
+    
+    breaker.dragProgress = Math.max(0, Math.min(100, (dragDistance / requiredDistance) * 100));
+    
+    // Update switch visual position
+    const element = document.querySelector(`.breaker[data-breaker="${breakerId}"]`);
+    const switchHandle = element.querySelector('.switch-handle');
+    
+    if (switchHandle) {
+        const translateY = 10 - (breaker.dragProgress / 100) * 70; // From 10% to -60%
+        switchHandle.style.transform = `translate(-50%, ${translateY}%)`;
+    }
+    
+    // Update progress bar if exists
+    const progressBar = element.querySelector('.drag-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = breaker.dragProgress + '%';
+    }
+}
+
+function stopDraggingBreaker(breakerId) {
+    if (!circuitBreakerActive) return;
+    
+    const breaker = breakers.find(b => b.id === breakerId);
+    if (!breaker || !breaker.isDragging) return;
+    
+    breaker.isDragging = false;
+    
+    const element = document.querySelector(`.breaker[data-breaker="${breakerId}"]`);
+    element.classList.remove('dragging');
+    
+    // Check if drag was successful (reached 100%)
+    if (breaker.dragProgress >= 100) {
+        breaker.clicksDone++;
+        
+        // Play success animation
+        element.classList.add('switch-success');
+        setTimeout(() => {
+            element.classList.remove('switch-success');
+        }, 300);
+        
+        // Check if breaker is fixed
+        if (breaker.clicksDone >= breaker.clicksNeeded) {
+            breaker.status = 'green';
+            
+            // Success animation
+            element.classList.add('success-flash');
+            setTimeout(() => {
+                element.classList.remove('success-flash');
+            }, 500);
+        }
+    }
+    
+    // Reset drag progress
+    breaker.dragProgress = 0;
+    
+    // Reset switch position if not fixed
+    const switchHandle = element.querySelector('.switch-handle');
+    if (switchHandle && breaker.status !== 'green') {
+        switchHandle.style.transform = '';
+    }
+    
+    // Reset progress bar
+    const progressBar = element.querySelector('.drag-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = '0%';
+    }
+    
+    updateCircuitBreakerUI();
+    
+    // Check if all breakers are green
+    if (breakers.every(b => b.status === 'green')) {
+        setTimeout(() => {
+            completeCircuitBreakerMinigame('perfect');
+        }, 800);
+    }
+}
+
+function completeCircuitBreakerMinigame(result) {
+    circuitBreakerActive = false;
+    
+    post('minigameResult', {
+        system: minigameData.system,
+        result: result
+    });
+}
+
+// Event listeners for circuit breakers - Mouse events
+document.addEventListener('mousedown', (e) => {
+    if (!circuitBreakerActive) return;
+    
+    const breaker = e.target.closest('.breaker');
+    if (breaker) {
+        const breakerId = parseInt(breaker.getAttribute('data-breaker'));
+        startDraggingBreaker(breakerId, e.clientY);
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!circuitBreakerActive) return;
+    
+    breakers.forEach(breaker => {
+        if (breaker.isDragging) {
+            updateDraggingBreaker(breaker.id, e.clientY);
+        }
+    });
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (!circuitBreakerActive) return;
+    
+    breakers.forEach(breaker => {
+        if (breaker.isDragging) {
+            stopDraggingBreaker(breaker.id);
+        }
+    });
+});
+
+// Touch events for mobile support
+document.addEventListener('touchstart', (e) => {
+    if (!circuitBreakerActive) return;
+    
+    const breaker = e.target.closest('.breaker');
+    if (breaker) {
+        const breakerId = parseInt(breaker.getAttribute('data-breaker'));
+        const touch = e.touches[0];
+        startDraggingBreaker(breakerId, touch.clientY);
+        e.preventDefault();
+    }
+});
+
+document.addEventListener('touchmove', (e) => {
+    if (!circuitBreakerActive) return;
+    
+    const touch = e.touches[0];
+    breakers.forEach(breaker => {
+        if (breaker.isDragging) {
+            updateDraggingBreaker(breaker.id, touch.clientY);
+        }
+    });
+    e.preventDefault();
+});
+
+document.addEventListener('touchend', (e) => {
+    if (!circuitBreakerActive) return;
+    
+    breakers.forEach(breaker => {
+        if (breaker.isDragging) {
+            stopDraggingBreaker(breaker.id);
+        }
+    });
+});
+
+// Crack Repair Minigame Functions
+function startCrackRepairMinigame(system) {
+    crackRepairActive = true;
+    trowelActive = true;
+    minigameData = { system };
+    
+    // Generate 2-3 random cracks ON THE TOWER BODY
+    const numCracks = Math.floor(Math.random() * 2) + 2; // 2 or 3 cracks
+    cracks = [];
+    
+    // Tower body boundaries (centered, trapezoid shape)
+    const towerCenterX = 50; // 50% from left
+    const towerTopWidth = 30; // 30% width at top
+    const towerBottomWidth = 40; // 40% width at bottom
+    
+    for (let i = 0; i < numCracks; i++) {
+        // Random Y position (20% to 80% of tower height)
+        const yPos = 20 + Math.random() * 60;
+        
+        // Calculate tower width at this Y position (trapezoid)
+        const widthAtY = towerTopWidth + (towerBottomWidth - towerTopWidth) * (yPos - 20) / 60;
+        
+        // Random X position within tower bounds at this Y
+        const xOffset = (Math.random() - 0.5) * widthAtY * 0.7; // 70% of width to stay safe
+        const xPos = towerCenterX + xOffset;
+        
+        const crack = {
+            id: i + 1,
+            x: xPos,
+            y: yPos,
+            width: 100 + Math.random() * 80, // 100-180px
+            height: 8 + Math.random() * 6, // 8-14px
+            rotation: -25 + Math.random() * 50, // -25 to 25 degrees
+            repairProgress: 0,
+            isRepaired: false,
+            branches: generateCrackBranches() // Add branch details
+        };
+        cracks.push(crack);
+    }
+    
+    // Change cursor to trowel using CSS class
+    document.body.classList.add('trowel-cursor');
+    
+    // Render cracks
+    renderCracks();
+    showCrackRepairUI();
+}
+
+function generateCrackBranches() {
+    // Generate 2-4 small branches for realistic crack
+    const numBranches = 2 + Math.floor(Math.random() * 3);
+    const branches = [];
+    
+    for (let i = 0; i < numBranches; i++) {
+        branches.push({
+            position: 20 + Math.random() * 60, // % along main crack
+            angle: -45 + Math.random() * 90, // -45 to 45 degrees
+            length: 15 + Math.random() * 25 // 15-40px
+        });
+    }
+    
+    return branches;
+}
+
+function renderCracks() {
+    const container = document.getElementById('cracksContainer');
+    container.innerHTML = '';
+    
+    cracks.forEach(crack => {
+        const crackElement = document.createElement('div');
+        crackElement.className = 'crack';
+        crackElement.setAttribute('data-crack', crack.id);
+        crackElement.style.left = crack.x + '%';
+        crackElement.style.top = crack.y + '%';
+        crackElement.style.width = crack.width + 'px';
+        crackElement.style.height = crack.height + 'px';
+        crackElement.style.transform = `translate(-50%, -50%) rotate(${crack.rotation}deg)`;
+        
+        if (crack.isRepaired) {
+            crackElement.classList.add('repaired');
+        }
+        
+        // Create main crack line with SVG for better quality
+        const crackSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        crackSvg.setAttribute('class', 'crack-svg');
+        crackSvg.setAttribute('width', crack.width);
+        crackSvg.setAttribute('height', crack.height * 3);
+        crackSvg.style.position = 'absolute';
+        crackSvg.style.top = '50%';
+        crackSvg.style.left = '0';
+        crackSvg.style.transform = 'translateY(-50%)';
+        
+        // Main crack path (jagged line)
+        const mainPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        let pathData = `M 0 ${crack.height * 1.5}`;
+        
+        // Create jagged main crack
+        const segments = 8;
+        for (let i = 1; i <= segments; i++) {
+            const x = (crack.width / segments) * i;
+            const y = crack.height * 1.5 + (Math.random() - 0.5) * crack.height * 0.8;
+            pathData += ` L ${x} ${y}`;
+        }
+        
+        mainPath.setAttribute('d', pathData);
+        mainPath.setAttribute('stroke', 'rgba(0, 0, 0, 0.9)');
+        mainPath.setAttribute('stroke-width', '3');
+        mainPath.setAttribute('fill', 'none');
+        mainPath.setAttribute('class', 'crack-main-path');
+        crackSvg.appendChild(mainPath);
+        
+        // Add shadow path
+        const shadowPath = mainPath.cloneNode();
+        shadowPath.setAttribute('stroke', 'rgba(0, 0, 0, 0.5)');
+        shadowPath.setAttribute('stroke-width', '5');
+        shadowPath.setAttribute('class', 'crack-shadow-path');
+        crackSvg.insertBefore(shadowPath, mainPath);
+        
+        // Add branches
+        crack.branches.forEach(branch => {
+            const branchX = (crack.width * branch.position) / 100;
+            const branchY = crack.height * 1.5;
+            const branchEndX = branchX + Math.cos(branch.angle * Math.PI / 180) * branch.length;
+            const branchEndY = branchY + Math.sin(branch.angle * Math.PI / 180) * branch.length;
+            
+            const branchPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            branchPath.setAttribute('d', `M ${branchX} ${branchY} L ${branchEndX} ${branchEndY}`);
+            branchPath.setAttribute('stroke', 'rgba(0, 0, 0, 0.8)');
+            branchPath.setAttribute('stroke-width', '2');
+            branchPath.setAttribute('fill', 'none');
+            branchPath.setAttribute('class', 'crack-branch-path');
+            crackSvg.appendChild(branchPath);
+        });
+        
+        crackElement.appendChild(crackSvg);
+        
+        // Create repair overlay
+        const repairOverlay = document.createElement('div');
+        repairOverlay.className = 'repair-overlay';
+        repairOverlay.style.width = crack.repairProgress + '%';
+        crackElement.appendChild(repairOverlay);
+        
+        // Create progress bar
+        const progressBar = document.createElement('div');
+        progressBar.className = 'crack-progress';
+        const progressFill = document.createElement('div');
+        progressFill.className = 'crack-progress-fill';
+        progressFill.style.width = crack.repairProgress + '%';
+        progressBar.appendChild(progressFill);
+        crackElement.appendChild(progressBar);
+        
+        // Add glow effect for unrepaired cracks
+        if (!crack.isRepaired) {
+            const glowElement = document.createElement('div');
+            glowElement.className = 'crack-glow';
+            crackElement.appendChild(glowElement);
+        }
+        
+        container.appendChild(crackElement);
+    });
+    
+    updateCrackCounter();
+}
+
+function updateCrackCounter() {
+    const repairedCount = cracks.filter(c => c.isRepaired).length;
+    document.getElementById('crackCount').textContent = repairedCount;
+    document.getElementById('totalCracks').textContent = cracks.length;
+}
+
+function repairCrack(crackId, mouseX, mouseY) {
+    if (!crackRepairActive) return;
+    
+    const crack = cracks.find(c => c.id === crackId);
+    if (!crack || crack.isRepaired) return;
+    
+    // Increase repair progress
+    crack.repairProgress += 3; // 3% per click/move
+    
+    if (crack.repairProgress >= 100) {
+        crack.repairProgress = 100;
+        crack.isRepaired = true;
+        
+        // Mark as repaired
+        const crackElement = document.querySelector(`.crack[data-crack="${crackId}"]`);
+        if (crackElement) {
+            crackElement.classList.add('repaired');
+        }
+    }
+    
+    // Update only the progress bars without re-rendering entire crack
+    updateCrackProgress(crackId);
+    
+    // Create cement splatter effect
+    createCementSplatter(mouseX, mouseY);
+    
+    // Check if all cracks are repaired
+    if (cracks.every(c => c.isRepaired)) {
+        setTimeout(() => {
+            completeCrackRepairMinigame('perfect');
+        }, 1000);
+    }
+}
+
+function updateCrackProgress(crackId) {
+    const crack = cracks.find(c => c.id === crackId);
+    if (!crack) return;
+    
+    const crackElement = document.querySelector(`.crack[data-crack="${crackId}"]`);
+    if (!crackElement) return;
+    
+    // Update repair overlay width
+    const repairOverlay = crackElement.querySelector('.repair-overlay');
+    if (repairOverlay) {
+        repairOverlay.style.width = crack.repairProgress + '%';
+    }
+    
+    // Update progress bar
+    const progressFill = crackElement.querySelector('.crack-progress-fill');
+    if (progressFill) {
+        progressFill.style.width = crack.repairProgress + '%';
+    }
+    
+    // Update counter
+    updateCrackCounter();
+}
+
+function createCementSplatter(x, y) {
+    const splatter = document.createElement('div');
+    splatter.className = 'cement-splatter';
+    splatter.style.left = x + 'px';
+    splatter.style.top = y + 'px';
+    
+    document.getElementById('crackRepairUI').appendChild(splatter);
+    
+    setTimeout(() => {
+        splatter.remove();
+    }, 500);
+}
+
+function completeCrackRepairMinigame(result) {
+    crackRepairActive = false;
+    trowelActive = false;
+    document.body.classList.remove('trowel-cursor');
+    
+    post('minigameResult', {
+        system: minigameData.system,
+        result: result
+    });
+}
+
+// Event listeners for crack repair
+document.addEventListener('mousedown', (e) => {
+    if (!crackRepairActive) return;
+    
+    const crack = e.target.closest('.crack');
+    if (crack && !crack.classList.contains('repaired')) {
+        const crackId = parseInt(crack.getAttribute('data-crack'));
+        const rect = document.getElementById('towerStructure').getBoundingClientRect();
+        repairCrack(crackId, e.clientX - rect.left, e.clientY - rect.top);
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!crackRepairActive) return;
+    
+    // Check if mouse button is pressed
+    if (e.buttons === 1) {
+        const crack = e.target.closest('.crack');
+        if (crack && !crack.classList.contains('repaired')) {
+            const crackId = parseInt(crack.getAttribute('data-crack'));
+            const rect = document.getElementById('towerStructure').getBoundingClientRect();
+            repairCrack(crackId, e.clientX - rect.left, e.clientY - rect.top);
+        }
     }
 });
