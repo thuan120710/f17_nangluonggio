@@ -80,6 +80,11 @@ RegisterNUICallback('stopDuty', function(data, cb)
     -- Dừng âm thanh cối xay gió
     StopTurbineSound()
     
+    -- Reset status text
+    SendNUIMessage({
+        action = 'resetStatus'
+    })
+    
     cb('ok')
 end)
 
@@ -172,6 +177,23 @@ AddEventHandler('windturbine:updateEarningsPool', function(earnings)
     SendNUIMessage({
         action = 'updateEarnings',
         earnings = earnings
+    })
+end)
+
+RegisterNetEvent('windturbine:updateActualEarningRate')
+AddEventHandler('windturbine:updateActualEarningRate', function(earningRate)
+    SendNUIMessage({
+        action = 'updateActualEarningRate',
+        earningRate = earningRate
+    })
+end)
+
+RegisterNetEvent('windturbine:updateWorkTime')
+AddEventHandler('windturbine:updateWorkTime', function(workHours, maxHours)
+    SendNUIMessage({
+        action = 'updateWorkTime',
+        workHours = workHours,
+        maxHours = maxHours
     })
 end)
 

@@ -404,7 +404,7 @@ body {
 }
 
 .efficiency-display, .earning-display {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 900;
     background: linear-gradient(90deg, #00ffff 0%, #00ff88 100%);
     -webkit-background-clip: text;
@@ -412,7 +412,7 @@ body {
 }
 
 .unit, .currency {
-    font-size: 16px;
+    font-size: 14px;
     opacity: 0.7;
 }
 
@@ -586,6 +586,7 @@ body {
     gap: 10px;
     font-size: 14px;
     color: rgba(0, 255, 255, 0.6);
+    min-width: 200px;
 }
 
 .status-dot {
@@ -801,8 +802,9 @@ body {
 }
 
 .currency-symbol {
-    font-size: 48px;
+    font-size: 36px;
     opacity: 0.7;
+    margin-left: 10px;
 }
 
 .amount-glow {

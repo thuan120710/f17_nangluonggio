@@ -1,6 +1,79 @@
 # Changelog - Wind Turbine Job
 
-## Cập nhật mới: Thông báo và Âm thanh
+## [2.0.0] - 2026-01-19 - HỆ THỐNG NĂNG LƯỢNG GIÓ HOÀN CHỈNH
+
+### ⚡ Added - Tính năng mới
+
+#### Hệ thống 5 chỉ số (Mỗi chỉ số = 20% lợi nhuận)
+- **Stability**: Độ ổn định cánh quạt
+- **Electric**: Hệ thống điện
+- **Lubrication**: Hệ thống bôi trơn
+- **Blades**: Thân tháp
+- **Safety**: An toàn
+
+#### Penalty System - Giảm độ bền theo giờ hoạt động
+- **0-2 giờ**: Không có penalty
+- **2-4 giờ**: 
+  - 80%: 1 bộ phận -10% độ bền
+  - 20%: 1-2 bộ phận -10% độ bền
+- **4-8 giờ**:
+  - 55%: 1-2 bộ phận -30% độ bền
+  - 30%: 1 bộ phận -20% độ bền
+  - 15%: Không bị gì
+- **8-12 giờ**:
+  - 40%: 1 bộ phận -25% độ bền
+  - 30%: 1-2 bộ phận -30% độ bền
+  - 20%: 1 bộ phận -40% độ bền
+  - 10%: Không bị gì
+
+#### Giới hạn thời gian
+- ✅ **12 giờ/ngày** tối đa
+- ✅ **84 giờ/tuần** tối đa
+- ✅ Tự động kết thúc ca khi hết giờ
+- ✅ Reset hàng ngày và hàng tuần
+
+#### Logic lợi nhuận mới
+- **Lợi nhuận cơ bản**: 5,000 IC/giờ (83.33 IC/phút)
+- **Chỉ số < 50%**: Giảm 50% lợi nhuận của chỉ số đó
+- **Chỉ số < 30%**: Ngừng sinh lợi nhuận từ chỉ số đó
+- **3 chỉ số < 30%**: Máy ngừng hoạt động hoàn toàn
+- **Điểm hòa vốn**: 40 giờ
+- **Lợi nhuận tối đa**: 220,000 IC/tuần (44 giờ)
+
+### 🔄 Changed - Thay đổi
+
+#### Logic tính toán
+- 🔄 Thay đổi từ hiệu suất trung bình → Tính từng chỉ số riêng biệt
+- 🔄 Giảm độ bền tự nhiên: 2-5% mỗi giờ (thay vì 1-3% mỗi 2 phút)
+- 🔄 Chu kỳ penalty: Mỗi giờ (thay vì không có)
+- 🔄 Giá trị khởi tạo: 100% (thay vì 70%)
+
+#### Thông báo
+- 🔄 Thông báo penalty khi xảy ra
+- 🔄 Thông báo giới hạn thời gian
+- 🔄 Thông báo máy ngừng hoạt động (3 chỉ số < 30%)
+- 🔄 Hiển thị thời gian làm việc trong log
+
+### 🐛 Fixed - Sửa lỗi
+
+- ✅ Sửa lỗi không theo dõi thời gian làm việc
+- ✅ Sửa lỗi không có giới hạn thời gian
+- ✅ Sửa lỗi tính lợi nhuận không chính xác theo yêu cầu
+- ✅ Sửa lỗi không có penalty system
+
+### 📊 Thống kê
+
+```
+Lợi nhuận tối đa/tuần: 220,000 IC
+Thời gian hòa vốn: 40 giờ
+Thời gian tối đa/ngày: 12 giờ
+Thời gian tối đa/tuần: 84 giờ
+Số chỉ số: 5 (mỗi chỉ số = 20%)
+```
+
+---
+
+## [1.0.0] - 2026-01-18 - PHIÊN BẢN ĐẦU TIÊN
 
 ### 🔊 Âm thanh đã thêm
 
@@ -49,13 +122,18 @@
 #### Thông báo khoảng cách:
 - ⚠️ **Rời xa**: "Bạn đang rời xa cối xay gió! Ca làm việc vẫn tiếp tục." (warning, 5s) - Khi cách >50m (thông báo mỗi 30s)
 
-### 🎮 Cải tiến trải nghiệm
+### 🎮 Tính năng
 
-1. **Phản hồi tức thì**: Mỗi hành động đều có âm thanh và thông báo phù hợp
-2. **Thông tin rõ ràng**: Người chơi luôn biết trạng thái hệ thống và thu nhập
-3. **Cảnh báo kịp thời**: Thông báo trước khi hệ thống xuống quá thấp
-4. **Động lực làm việc**: Thông báo thu nhập cao khi hiệu suất tốt
-5. **Linh hoạt AFK**: Có thể rời xa cối xay gió, ca làm việc vẫn tiếp tục (chỉ cảnh báo)
+1. **UI hiện đại**: Quạt tuabin quay, thanh tròn progress, industrial design
+2. **5 hệ thống**: Stability, Electric, Lubrication, Blades, Safety
+3. **4 loại minigame**: 
+   - Bar (Lubrication, Safety)
+   - Fan (Stability) - Siết ốc và xoay quạt
+   - Circuit Breaker (Electric) - Gạt cầu dao
+   - Crack Repair (Blades) - Trét xi măng
+4. **Quỹ tiền**: Earnings pool, không cộng tiền trực tiếp
+5. **Logic server-side**: 100% tính toán trên server, chống exploit
+6. **Tích hợp QBCore**: Sử dụng QBCore notify và money system
 
 ### 📝 Ghi chú kỹ thuật
 
@@ -64,12 +142,3 @@
 - Sử dụng Web Audio API cho âm thanh NUI-side
 - Tất cả thông báo đều có icon emoji để dễ nhận biết
 - Thời gian hiển thị thông báo được tối ưu theo mức độ quan trọng
-
-### 🔧 Cấu hình
-
-Không cần cấu hình thêm. Tất cả âm thanh và thông báo đã được tích hợp sẵn.
-
-### 🐛 Lưu ý
-
-- Âm thanh NUI sử dụng Web Audio API, có thể cần quyền autoplay trên một số trình duyệt
-- Âm thanh client-side sử dụng native sounds của GTA V, không cần file âm thanh bên ngoài

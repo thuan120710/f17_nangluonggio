@@ -192,9 +192,12 @@ function updateEfficiencyDisplay(efficiency) {
     }
     
     // Update earning rate
-    const baseSalary = 100;
-    const earningRate = baseSalary * (efficiency / 100);
-    document.getElementById('earningRate').textContent = Math.floor(earningRate);
+    // Tính dựa trên hiệu suất thực tế (efficiency = trung bình 5 chỉ số)
+    // Nhưng lợi nhuận thực tế phụ thuộc vào từng chỉ số riêng biệt
+    // Để đơn giản, hiển thị theo efficiency (gần đúng)
+    const basePerHour = 5000; // IC/giờ (tối đa)
+    const earningRatePerHour = basePerHour * (efficiency / 100);
+    document.getElementById('earningRate').textContent = Math.floor(earningRatePerHour).toLocaleString();
     
     // Update progress ring
     const progressCircle = document.querySelector('.progress-ring-circle');
@@ -209,7 +212,9 @@ function updateEfficiencyDisplay(efficiency) {
     const statusText = document.getElementById('statusText');
     if (efficiency > 0) {
         if (statusDot) statusDot.classList.add('online');
-        if (statusText) statusText.textContent = 'ONLINE';
+        if (statusText && statusText.textContent === 'OFFLINE') {
+            statusText.textContent = 'ONLINE';
+        }
     } else {
         if (statusDot) statusDot.classList.remove('online');
         if (statusText) statusText.textContent = 'OFFLINE';
@@ -219,7 +224,7 @@ function updateEfficiencyDisplay(efficiency) {
 // Update earnings display
 function updateEarningsDisplay(earnings) {
     currentEarnings = earnings;
-    document.getElementById('totalEarnings').textContent = Math.floor(earnings);
+    document.getElementById('totalEarnings').textContent = Math.floor(earnings).toLocaleString();
 }
 
 // Start minigame
@@ -429,13 +434,14 @@ window.addEventListener('message', (event) => {
         case 'showEarningsUI':
             showEarningsUI();
             if (data.earnings !== undefined) {
-                document.getElementById('totalEarnings').textContent = Math.floor(data.earnings);
+                document.getElementById('totalEarnings').textContent = Math.floor(data.earnings).toLocaleString();
             }
             if (data.efficiency !== undefined) {
                 document.getElementById('currentEfficiency').textContent = Math.floor(data.efficiency) + '%';
-                const baseSalary = 100;
-                const earningRate = baseSalary * (data.efficiency / 100);
-                document.getElementById('currentEarningRate').textContent = Math.floor(earningRate);
+                // Hiển thị earning rate theo giờ
+                const basePerHour = 5000; // IC/giờ (tối đa)
+                const earningRatePerHour = basePerHour * (data.efficiency / 100);
+                document.getElementById('currentEarningRate').textContent = Math.floor(earningRatePerHour).toLocaleString();
             }
             break;
             
@@ -449,6 +455,29 @@ window.addEventListener('message', (event) => {
             
         case 'updateEarnings':
             updateEarningsDisplay(data.earnings);
+            break;
+            
+        case 'updateActualEarningRate':
+            if (data.earningRate !== undefined) {
+                document.getElementById('earningRate').textContent = Math.floor(data.earningRate).toLocaleString();
+            }
+            break;
+            
+        case 'updateWorkTime':
+            if (data.workHours !== undefined && data.maxHours !== undefined) {
+                const statusText = document.getElementById('statusText');
+                if (statusText) {
+                    const hours = Math.floor(data.workHours * 10) / 10; // 1 chữ số thập phân
+                    statusText.textContent = `ONLINE - ${hours}h/${data.maxHours}h`;
+                }
+            }
+            break;
+            
+        case 'resetStatus':
+            const statusText = document.getElementById('statusText');
+            const statusDot = document.querySelector('.status-dot');
+            if (statusText) statusText.textContent = 'OFFLINE';
+            if (statusDot) statusDot.classList.remove('online');
             break;
     }
 });
