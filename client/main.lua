@@ -73,16 +73,19 @@ end)
 RegisterNUICallback('stopDuty', function(data, cb)
     TriggerServerEvent('windturbine:stopDuty')
     isOnDuty = false
+    
+    
     CloseUI()
+    
     QBCore.Functions.Notify('👋 Đã kết thúc ca làm việc!', 'primary', 3000)
     PlaySound(-1, "QUIT", "HUD_FRONTEND_DEFAULT_SOUNDSET", 0, 0, 1)
     
     -- Dừng âm thanh cối xay gió
     StopTurbineSound()
     
-    -- Reset status text
+    -- Reset toàn bộ UI về trạng thái ban đầu
     SendNUIMessage({
-        action = 'resetStatus'
+        action = 'resetToInitialState'
     })
     
     cb('ok')
@@ -200,6 +203,12 @@ end)
 RegisterNetEvent('windturbine:stopTurbine')
 AddEventHandler('windturbine:stopTurbine', function()
     isOnDuty = false
+    
+    -- Reset UI về trạng thái ban đầu
+    SendNUIMessage({
+        action = 'resetToInitialState'
+    })
+    
     CloseUI()
 end)
 

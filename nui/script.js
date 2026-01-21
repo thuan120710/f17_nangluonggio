@@ -7,6 +7,7 @@ let indicatorPosition = 0;
 let indicatorDirection = 1;
 let currentRound = 0;
 let totalRounds = 1;
+let isOnDuty = false; // Track duty status
 
 // Fan minigame variables
 let fanMinigameActive = false;
@@ -178,18 +179,20 @@ function updateEfficiencyDisplay(efficiency) {
     currentEfficiency = efficiency;
     document.getElementById('efficiencyValue').textContent = Math.floor(efficiency);
     
-    // Update turbine speed
+    // Update turbine speed - CHỈ khi đang onDuty
     const turbine = document.querySelector('.blade-container');
-    if (turbine) {
-        const speed = 10 - (efficiency / 100) * 7; // 3s to 10s
-        turbine.style.animationDuration = speed + 's';
-        
+    if (turbine && isOnDuty) {
         if (efficiency < 10) {
+            // Dừng quạt khi efficiency < 10%
             turbine.classList.add('stopped');
         } else {
+            // Xoay quạt khi efficiency >= 10%
             turbine.classList.remove('stopped');
+            const speed = 10 - (efficiency / 100) * 7; // 3s to 10s
+            turbine.style.animationDuration = speed + 's';
         }
     }
+    // Nếu không onDuty, không update turbine (giữ nguyên stopped)
     
     // Update earning rate
     // Tính dựa trên hiệu suất thực tế (efficiency = trung bình 5 chỉ số)
@@ -207,18 +210,24 @@ function updateEfficiencyDisplay(efficiency) {
         progressCircle.style.strokeDashoffset = offset;
     }
     
-    // Update status
+    // Update status - CHỈ update khi đang onDuty
     const statusDot = document.querySelector('.status-dot');
     const statusText = document.getElementById('statusText');
-    if (efficiency > 0) {
-        if (statusDot) statusDot.classList.add('online');
-        if (statusText && statusText.textContent === 'OFFLINE') {
-            statusText.textContent = 'ONLINE';
+    
+    if (isOnDuty) {
+        // Chỉ update status khi đang làm việc
+        if (efficiency > 0) {
+            if (statusDot) statusDot.classList.add('online');
+            // Giữ nguyên status text nếu đã có work time (ONLINE - Xh/12h)
+            if (statusText && statusText.textContent === 'OFFLINE') {
+                statusText.textContent = 'ONLINE';
+            }
+        } else {
+            if (statusDot) statusDot.classList.remove('online');
+            if (statusText) statusText.textContent = 'OFFLINE';
         }
-    } else {
-        if (statusDot) statusDot.classList.remove('online');
-        if (statusText) statusText.textContent = 'OFFLINE';
     }
+    // Nếu không onDuty, không update status (giữ nguyên OFFLINE)
 }
 
 // Update earnings display
@@ -358,6 +367,7 @@ document.getElementById('closeBtn').addEventListener('click', () => {
 
 document.getElementById('startDutyBtn').addEventListener('click', () => {
     post('startDuty');
+    isOnDuty = true; // Set duty status
     document.getElementById('startDutyBtn').classList.add('hidden');
     document.getElementById('stopDutyBtn').classList.remove('hidden');
     
@@ -368,6 +378,7 @@ document.getElementById('startDutyBtn').addEventListener('click', () => {
 });
 
 document.getElementById('stopDutyBtn').addEventListener('click', () => {
+    isOnDuty = false; // Set duty status to false
     post('stopDuty');
 });
 
@@ -478,6 +489,45 @@ window.addEventListener('message', (event) => {
             const statusDot = document.querySelector('.status-dot');
             if (statusText) statusText.textContent = 'OFFLINE';
             if (statusDot) statusDot.classList.remove('online');
+            break;
+            
+        case 'resetToInitialState':
+            // Set duty status
+            isOnDuty = false;
+            
+            // Reset buttons
+            document.getElementById('stopDutyBtn').classList.add('hidden');
+            document.getElementById('startDutyBtn').classList.remove('hidden');
+            
+            // Reset status
+            const statusTextReset = document.getElementById('statusText');
+            const statusDotReset = document.querySelector('.status-dot');
+            if (statusTextReset) statusTextReset.textContent = 'OFFLINE';
+            if (statusDotReset) statusDotReset.classList.remove('online');
+            
+            // DỪNG HOÀN TOÀN quạt (không xoay)
+            const turbineReset = document.querySelector('.blade-container');
+            if (turbineReset) {
+                turbineReset.classList.add('stopped'); // Thêm class stopped để dừng animation
+                turbineReset.style.animationDuration = ''; // Reset inline style
+            }
+            
+            // Reset efficiency display về 0 (chỉ hiển thị, không ảnh hưởng systems)
+            document.getElementById('efficiencyValue').textContent = '0';
+            
+            // Reset progress ring to 0
+            const progressCircleReset = document.querySelector('.progress-ring-circle');
+            if (progressCircleReset) {
+                const circumference = 754;
+                progressCircleReset.style.strokeDashoffset = circumference;
+            }
+            
+            // Reset earning rate to 0
+            document.getElementById('earningRate').textContent = '0';
+            
+            // GIỮ NGUYÊN:
+            // - Systems (stability, electric, lubrication, blades, safety) - không reset
+            // - Earnings pool (quỹ tiền) - không reset
             break;
     }
 });
