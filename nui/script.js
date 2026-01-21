@@ -449,10 +449,24 @@ window.addEventListener('message', (event) => {
     
     switch (data.action) {
         case 'showMainUI':
+            // Đồng bộ onDuty status từ client
+            if (data.onDuty !== undefined) {
+                isOnDuty = data.onDuty;
+            }
+            
             showMainUI();
             if (data.systems) updateSystemsDisplay(data.systems);
             if (data.efficiency !== undefined) updateEfficiencyDisplay(data.efficiency);
             if (data.earnings !== undefined) updateEarningsDisplay(data.earnings);
+            
+            // Cập nhật UI dựa trên onDuty status
+            if (isOnDuty) {
+                document.getElementById('startDutyBtn').classList.add('hidden');
+                document.getElementById('stopDutyBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('stopDutyBtn').classList.add('hidden');
+                document.getElementById('startDutyBtn').classList.remove('hidden');
+            }
             break;
             
         case 'hideUI':

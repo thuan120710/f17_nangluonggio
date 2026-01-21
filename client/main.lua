@@ -14,7 +14,8 @@ local function OpenMainUI()
         action = 'showMainUI',
         systems = currentSystems,
         efficiency = currentEfficiency,
-        earnings = currentEarnings
+        earnings = currentEarnings,
+        onDuty = isOnDuty  -- Gửi trạng thái onDuty
     })
 end
 

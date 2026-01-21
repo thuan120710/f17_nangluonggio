@@ -235,11 +235,11 @@ AddEventHandler('windturbine:startDuty', function()
     if not canWork then
         if reason == "DAILY_LIMIT" then
             TriggerClientEvent('QBCore:Notify', playerId, 
-                string.format('❌ Đã đạt giới hạn %d giờ/ngày! Hãy nghỉ ngơi.', Config.MaxDailyHours), 
+                string.format('❌ Đã đạt giới hạn %.1f giờ/ngày! Hãy nghỉ ngơi.', Config.MaxDailyHours), 
                 'error', 5000)
         elseif reason == "WEEKLY_LIMIT" then
             TriggerClientEvent('QBCore:Notify', playerId, 
-                string.format('❌ Đã đạt giới hạn %d giờ/tuần! Hãy nghỉ ngơi.', Config.MaxWeeklyHours), 
+                string.format('❌ Đã đạt giới hạn %.1f giờ/tuần! Hãy nghỉ ngơi.', Config.MaxWeeklyHours), 
                 'error', 5000)
         end
         return
@@ -357,29 +357,45 @@ CreateThread(function()
                 local currentWorkHours = (currentTime - data.workStartTime) / 3600
                 data.totalWorkHours = currentWorkHours
                 
-                -- Kiểm tra giới hạn thời gian
-                local canWork, reason = CheckTimeLimit(playerId)
-                if not canWork then
+                -- Kiểm tra giới hạn thời gian (bao gồm cả thời gian ca hiện tại)
+                local totalDailyHours = data.dailyWorkHours + currentWorkHours
+                local totalWeeklyHours = data.weeklyWorkHours + currentWorkHours
+                
+                -- Kiểm tra nếu vượt quá giới hạn
+                if totalDailyHours >= Config.MaxDailyHours then
                     -- Tự động kết thúc ca khi hết giờ
                     data.onDuty = false
                     TriggerClientEvent('windturbine:stopTurbine', playerId)
                     
-                    if reason == "DAILY_LIMIT" then
-                        TriggerClientEvent('QBCore:Notify', playerId, 
-                            '⏰ Đã hết giờ làm việc trong ngày! Ca làm việc tự động kết thúc.', 
-                            'error', 5000)
-                    elseif reason == "WEEKLY_LIMIT" then
-                        TriggerClientEvent('QBCore:Notify', playerId, 
-                            '⏰ Đã hết giờ làm việc trong tuần! Ca làm việc tự động kết thúc.', 
-                            'error', 5000)
-                    end
+                    TriggerClientEvent('QBCore:Notify', playerId, 
+                        '⏰ Đã hết giờ làm việc trong ngày! Ca làm việc tự động kết thúc.', 
+                        'error', 5000)
                     
                     -- Cập nhật thời gian làm việc
-                    data.dailyWorkHours = data.dailyWorkHours + currentWorkHours
-                    data.weeklyWorkHours = data.weeklyWorkHours + currentWorkHours
+                    data.dailyWorkHours = totalDailyHours
+                    data.weeklyWorkHours = totalWeeklyHours
                     
-                    print(('[Wind Turbine] Player %s auto-stopped: %s (Daily: %.1fh, Weekly: %.1fh)'):format(
-                        playerId, reason, data.dailyWorkHours, data.weeklyWorkHours))
+                    print(('[Wind Turbine] Player %s auto-stopped: DAILY_LIMIT (Daily: %.1fh, Weekly: %.1fh)'):format(
+                        playerId, data.dailyWorkHours, data.weeklyWorkHours))
+                    
+                    goto continue
+                end
+                
+                if totalWeeklyHours >= Config.MaxWeeklyHours then
+                    -- Tự động kết thúc ca khi hết giờ
+                    data.onDuty = false
+                    TriggerClientEvent('windturbine:stopTurbine', playerId)
+                    
+                    TriggerClientEvent('QBCore:Notify', playerId, 
+                        '⏰ Đã hết giờ làm việc trong tuần! Ca làm việc tự động kết thúc.', 
+                        'error', 5000)
+                    
+                    -- Cập nhật thời gian làm việc
+                    data.dailyWorkHours = totalDailyHours
+                    data.weeklyWorkHours = totalWeeklyHours
+                    
+                    print(('[Wind Turbine] Player %s auto-stopped: WEEKLY_LIMIT (Daily: %.1fh, Weekly: %.1fh)'):format(
+                        playerId, data.dailyWorkHours, data.weeklyWorkHours))
                     
                     goto continue
                 end
