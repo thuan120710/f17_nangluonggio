@@ -89,6 +89,15 @@ function showMainUI() {
     document.getElementById('mainUI').classList.remove('hidden');
     document.getElementById('minigameUI').classList.add('hidden');
     document.getElementById('earningsUI').classList.add('hidden');
+    
+    // Update disabled state của systems dựa trên isOnDuty
+    document.querySelectorAll('.system-item').forEach(item => {
+        if (isOnDuty) {
+            item.classList.remove('disabled');
+        } else {
+            item.classList.add('disabled');
+        }
+    });
 }
 
 function showMinigameUI() {
@@ -375,6 +384,11 @@ document.getElementById('startDutyBtn').addEventListener('click', () => {
     const statusText = document.getElementById('statusText');
     if (statusDot) statusDot.classList.add('online');
     if (statusText) statusText.textContent = 'ONLINE';
+    
+    // Enable systems (cho phép sửa chữa)
+    document.querySelectorAll('.system-item').forEach(item => {
+        item.classList.remove('disabled');
+    });
 });
 
 document.getElementById('stopDutyBtn').addEventListener('click', () => {
@@ -384,6 +398,13 @@ document.getElementById('stopDutyBtn').addEventListener('click', () => {
 
 document.querySelectorAll('.system-item').forEach(item => {
     item.addEventListener('click', () => {
+        // Chỉ cho phép sửa chữa khi đang onDuty
+        if (!isOnDuty) {
+            // Có thể thêm thông báo hoặc hiệu ứng để báo không được phép
+            playSound('fail');
+            return;
+        }
+        
         const system = item.getAttribute('data-system');
         playSound('click');
         post('repair', { system });
@@ -524,6 +545,11 @@ window.addEventListener('message', (event) => {
             
             // Reset earning rate to 0
             document.getElementById('earningRate').textContent = '0';
+            
+            // Disable systems (không cho phép sửa chữa)
+            document.querySelectorAll('.system-item').forEach(item => {
+                item.classList.add('disabled');
+            });
             
             // GIỮ NGUYÊN:
             // - Systems (stability, electric, lubrication, blades, safety) - không reset

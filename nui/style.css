@@ -452,11 +452,21 @@ body {
 
 .system-item {
     cursor: pointer;
-    transition: transform 0.3s;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.system-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .system-item:hover {
     transform: translateY(-10px);
+}
+
+.system-item.disabled:hover {
+    transform: none;
 }
 
 .system-card {
