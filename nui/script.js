@@ -8,6 +8,7 @@ let indicatorDirection = 1;
 let currentRound = 0;
 let totalRounds = 1;
 let isOnDuty = false; // Track duty status
+let workLimitReached = false; // Track if work limit has been reached
 
 // Fan minigame variables
 let fanMinigameActive = false;
@@ -375,6 +376,13 @@ document.getElementById('closeBtn').addEventListener('click', () => {
 });
 
 document.getElementById('startDutyBtn').addEventListener('click', () => {
+    // Kiểm tra nếu đã đạt giới hạn
+    if (workLimitReached) {
+        playSound('fail');
+        // Thông báo đã được hiển thị từ server
+        return;
+    }
+    
     post('startDuty');
     isOnDuty = true; // Set duty status
     document.getElementById('startDutyBtn').classList.add('hidden');
@@ -449,23 +457,23 @@ window.addEventListener('message', (event) => {
     
     switch (data.action) {
         case 'showMainUI':
-            // Đồng bộ onDuty status từ client
-            if (data.onDuty !== undefined) {
-                isOnDuty = data.onDuty;
-            }
-            
             showMainUI();
             if (data.systems) updateSystemsDisplay(data.systems);
             if (data.efficiency !== undefined) updateEfficiencyDisplay(data.efficiency);
             if (data.earnings !== undefined) updateEarningsDisplay(data.earnings);
             
-            // Cập nhật UI dựa trên onDuty status
-            if (isOnDuty) {
-                document.getElementById('startDutyBtn').classList.add('hidden');
-                document.getElementById('stopDutyBtn').classList.remove('hidden');
-            } else {
-                document.getElementById('stopDutyBtn').classList.add('hidden');
-                document.getElementById('startDutyBtn').classList.remove('hidden');
+            // Kiểm tra onDuty status từ server
+            if (data.onDuty !== undefined) {
+                isOnDuty = data.onDuty;
+                
+                // Update UI dựa trên onDuty status
+                if (isOnDuty) {
+                    document.getElementById('startDutyBtn').classList.add('hidden');
+                    document.getElementById('stopDutyBtn').classList.remove('hidden');
+                } else {
+                    document.getElementById('stopDutyBtn').classList.add('hidden');
+                    document.getElementById('startDutyBtn').classList.remove('hidden');
+                }
             }
             break;
             
@@ -568,6 +576,46 @@ window.addEventListener('message', (event) => {
             // GIỮ NGUYÊN:
             // - Systems (stability, electric, lubrication, blades, safety) - không reset
             // - Earnings pool (quỹ tiền) - không reset
+            break;
+            
+        case 'workLimitReached':
+            // Đánh dấu đã đạt giới hạn
+            workLimitReached = true;
+            
+            // Disable nút Start và thay đổi text
+            const startBtn = document.getElementById('startDutyBtn');
+            if (startBtn) {
+                startBtn.disabled = true;
+                startBtn.classList.add('disabled-limit');
+                startBtn.textContent = 'ĐÃ ĐẠT GIỚI HẠN';
+            }
+            
+            // Hiển thị thông báo trên status
+            const statusTextLimit = document.getElementById('statusText');
+            if (statusTextLimit) {
+                statusTextLimit.textContent = 'ĐÃ ĐẠT GIỚI HẠN - QUAY LẠI NGÀY MAI';
+                statusTextLimit.style.color = '#ff4444';
+            }
+            break;
+            
+        case 'resetWorkLimit':
+            // Reset work limit khi ngày mới
+            workLimitReached = false;
+            
+            // Enable lại nút Start
+            const startBtnReset = document.getElementById('startDutyBtn');
+            if (startBtnReset) {
+                startBtnReset.disabled = false;
+                startBtnReset.classList.remove('disabled-limit');
+                startBtnReset.textContent = 'BẮT ĐẦU CA';
+            }
+            
+            // Reset status text
+            const statusTextReset2 = document.getElementById('statusText');
+            if (statusTextReset2 && statusTextReset2.textContent.includes('ĐÃ ĐẠT GIỚI HẠN')) {
+                statusTextReset2.textContent = 'OFFLINE';
+                statusTextReset2.style.color = '';
+            }
             break;
     }
 });

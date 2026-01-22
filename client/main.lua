@@ -201,6 +201,14 @@ AddEventHandler('windturbine:updateWorkTime', function(workHours, maxHours)
     })
 end)
 
+RegisterNetEvent('windturbine:resetWorkLimit')
+AddEventHandler('windturbine:resetWorkLimit', function()
+    -- Reset work limit khi ngày mới
+    SendNUIMessage({
+        action = 'resetWorkLimit'
+    })
+end)
+
 RegisterNetEvent('windturbine:stopTurbine')
 AddEventHandler('windturbine:stopTurbine', function()
     isOnDuty = false
@@ -211,6 +219,14 @@ AddEventHandler('windturbine:stopTurbine', function()
     })
     
     CloseUI()
+end)
+
+RegisterNetEvent('windturbine:workLimitReached')
+AddEventHandler('windturbine:workLimitReached', function()
+    -- Gửi thông báo đến UI để disable nút Start
+    SendNUIMessage({
+        action = 'workLimitReached'
+    })
 end)
 
 -- Thread: Kiểm tra khoảng cách

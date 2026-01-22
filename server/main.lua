@@ -201,12 +201,18 @@ local function CheckTimeLimit(playerId)
     if playerData[playerId].lastDayReset ~= currentDay then
         playerData[playerId].dailyWorkHours = 0
         playerData[playerId].lastDayReset = currentDay
+        
+        -- Thông báo cho client reset work limit UI
+        TriggerClientEvent('windturbine:resetWorkLimit', playerId)
     end
     
     -- Reset weekly counter
     if playerData[playerId].lastWeekReset ~= currentWeek then
         playerData[playerId].weeklyWorkHours = 0
         playerData[playerId].lastWeekReset = currentWeek
+        
+        -- Thông báo cho client reset work limit UI
+        TriggerClientEvent('windturbine:resetWorkLimit', playerId)
     end
     
     -- Kiểm tra giới hạn
@@ -235,12 +241,14 @@ AddEventHandler('windturbine:startDuty', function()
     if not canWork then
         if reason == "DAILY_LIMIT" then
             TriggerClientEvent('QBCore:Notify', playerId, 
-                string.format('❌ Đã đạt giới hạn %.1f giờ/ngày! Hãy nghỉ ngơi.', Config.MaxDailyHours), 
+                '❌ Đã đạt giới hạn! Hãy quay lại vào ngày mai.', 
                 'error', 5000)
+            TriggerClientEvent('windturbine:workLimitReached', playerId)
         elseif reason == "WEEKLY_LIMIT" then
             TriggerClientEvent('QBCore:Notify', playerId, 
-                string.format('❌ Đã đạt giới hạn %.1f giờ/tuần! Hãy nghỉ ngơi.', Config.MaxWeeklyHours), 
+                '❌ Đã đạt giới hạn tuần! Hãy quay lại vào tuần sau.', 
                 'error', 5000)
+            TriggerClientEvent('windturbine:workLimitReached', playerId)
         end
         return
     end

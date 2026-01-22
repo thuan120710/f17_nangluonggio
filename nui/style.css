@@ -1984,3 +1984,27 @@ body.trowel-cursor * {
     font-size: 32px;
     text-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
 }
+
+/* Disabled button style for work limit reached */
+.btn-start.disabled-limit {
+    background: rgba(255, 68, 68, 0.2);
+    border-color: #ff4444;
+    color: #ff4444;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-start.disabled-limit:hover {
+    background: rgba(255, 68, 68, 0.2);
+    box-shadow: none;
+    transform: none;
+}
+
+.btn-start.disabled-limit::before {
+    display: none;
+}
+
+/* Trowel cursor for crack repair */
+.trowel-cursor {
+    cursor: url('img/trowel_cursor.svg') 16 16, auto;
+}
